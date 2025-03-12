@@ -86,26 +86,28 @@
   <title>Red Background Triggered AR Cube</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ar.js@2.2.2/aframe/build/aframe-ar.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
       overflow: hidden;
     }
+
     canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 320px; /* Or any size you want */
-    height: 240px;
-    border: 2px solid red; /* To make it visible */
-    z-index: 1000; /* To make sure it's on top */
-    display: block;
-}
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 320px;
+      height: 240px;
+      border: 2px solid red;
+      z-index: 1000;
+      display: none;
+    }
   </style>
 </head>
 
 <body>
-  <a-scene embedded arjs>
+  <a-scene arjs>
     <a-box id="cube" position="0 0 -3" scale="0.5 0.5 0.5" color="red" visible="false"
       animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
     </a-box>
@@ -125,53 +127,48 @@
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    canvas.style.display = 'none'; // Hide the canvas
+
     document.body.appendChild(canvas);
 
     const cube = document.querySelector('#cube');
 
     function detectRed() {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0);
-      console.log(video.videoWidth, video.videoHeight);
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0);
 
-      let redDetected = false;
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
+        console.log("Canvas Width:", canvas.width, "Height:", canvas.height);
+
+        const imageData = context.getImageData(canvas.width / 2, canvas.height / 2, 1, 1);
+        const data = imageData.data;
+        const r = data[0];
+        const g = data[1];
+        const b = data[2];
 
         if (r > 150 && g < 100 && b < 100) {
-          redDetected = true;
-          break;
+          cube.setAttribute('visible', 'true');
+        } else {
+          cube.setAttribute('visible', 'false');
         }
       }
-
-      if (redDetected) {
-        cube.setAttribute('visible', 'true');
-      } else {
-        cube.setAttribute('visible', 'false');
-      }
-
       requestAnimationFrame(detectRed);
     }
 
     detectRed();
 
-    // Add touch interaction to change color
-    cube.addEventListener('click', () => {
+    cube.addEventListener('click', () => {     
       const currentColor = cube.getAttribute('color');
       cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
     });
+
     cube.addEventListener('touchstart', () => {
       const currentColor = cube.getAttribute('color');
       cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
     });
 
   </script>
+
 </body>
 
 </html>
