@@ -107,7 +107,7 @@
 </head>
 
 <body>
-  <a-scene id="ar-scene">
+  <a-scene arjs="debugUIEnabled: false; detectionMode: mono; sourceType: webcam;" id="ar-scene">
     <a-box id="cube" position="0 0 -3" scale="0.5 0.5 0.5" color="red" visible="false"
       animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
     </a-box>
@@ -121,89 +121,53 @@
     video.setAttribute('muted', '');
     video.setAttribute('playsinline', '');
 
-    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-      video.srcObject = stream;
-      video.play();
-
-      const arSource = new THREEx.ArVideoSource({
-        sourceType: 'webcam',
-        sourceWidth: 640,
-        sourceHeight: 480,
-        displayWidth: 640,
-        displayHeight: 480,
+    scene.addEventListener('arjsInitialized', () => {
+      navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+        video.srcObject = stream;
+        video.play();
       });
 
-      arSource.init(() => {
-        const arContext = new THREEx.ArToolkitContext({
-          cameraParametersUrl: THREEx.ArToolkitContext.baseURL + 'data/data/camera_para.dat',
-          detectionMode: 'mono',
-        });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      document.body.appendChild(canvas);
 
-        arContext.init(() => {
-          scene.addEventListener('loaded', () => {
-            const arController = new THREEx.ArMarkerControls(arContext, scene.object3D, {
-              type: 'pattern',
-              patternUrl: THREEx.ArToolkitContext.baseURL + 'data/data/patt.hiro', // or any other pattern
-            });
-            arContext.arController = arController; //add this line.
-            scene.object3D.add(arContext.arController.object3D); //add this line.
-          });
-          arContext.arSource = arSource;
-          arContext.initSource(arSource);
-          scene.object3D.add(arSource.object3D);
+      const cube = document.querySelector('#cube');
 
-          arContext.addEventListener('initialized', () => {
-            arSource.onResize(arContext);
-          });
-          arSource.domElement = video;
-          arSource.ready = true;
-          arContext.update();
-        });
-      });
-    });
+      function detectRed() {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0);
 
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    
-    document.body.appendChild(canvas);
+          console.log("Canvas Width:", canvas.width, "Height:", canvas.height);
 
-    const cube = document.querySelector('#cube');
+          const imageData = context.getImageData(canvas.width / 2, canvas.height / 2, 1, 1);
+          const data = imageData.data;
+          const r = data[0];
+          const g = data[1];
+          const b = data[2];
 
-    function detectRed() {
-      if (video.videoWidth > 0 && video.videoHeight > 0) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0);
-
-        console.log("Canvas Width:", canvas.width, "Height:", canvas.height);
-
-        const imageData = context.getImageData(canvas.width / 2, canvas.height / 2, 1, 1);
-        const data = imageData.data;
-        const r = data[0];
-        const g = data[1];
-        const b = data[2];
-
-        if (r > 150 && g < 100 && b < 100) {
-          cube.setAttribute('visible', 'true');
-        } else {
-          cube.setAttribute('visible', 'false');
+          if (r > 150 && g < 100 && b < 100) {
+            cube.setAttribute('visible', 'true');
+          } else {
+            cube.setAttribute('visible', 'false');
+          }
         }
+        requestAnimationFrame(detectRed);
       }
-      requestAnimationFrame(detectRed);
-    }
 
-    detectRed();
+      detectRed();
 
-    cube.addEventListener('click', () => {
-      const currentColor = cube.getAttribute('color');
-      cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
+      cube.addEventListener('click', () => {
+        const currentColor = cube.getAttribute('color');
+        cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
+      });
+      cube.addEventListener('touchstart', () => {
+        const currentColor = cube.getAttribute('color');
+        cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
+      });
     });
-
-    cube.addEventListener('touchstart', () => {
-      const currentColor = cube.getAttribute('color');
-      cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
-    });
-
+    
   </script>
 
 </body>
