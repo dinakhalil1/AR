@@ -107,7 +107,7 @@
 </head>
 
 <body>
-  <a-scene arjs>
+  <a-scene id="ar-scene">
     <a-box id="cube" position="0 0 -3" scale="0.5 0.5 0.5" color="red" visible="false"
       animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
     </a-box>
@@ -115,6 +115,7 @@
   </a-scene>
 
   <script>
+    const scene = document.querySelector('#ar-scene');
     const video = document.createElement('video');
     video.setAttribute('autoplay', '');
     video.setAttribute('muted', '');
@@ -123,11 +124,47 @@
     navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
       video.srcObject = stream;
       video.play();
+
+      const arSource = new THREEx.ArVideoSource({
+        sourceType: 'webcam',
+        sourceWidth: 640,
+        sourceHeight: 480,
+        displayWidth: 640,
+        displayHeight: 480,
+      });
+
+      arSource.init(() => {
+        const arContext = new THREEx.ArToolkitContext({
+          cameraParametersUrl: THREEx.ArToolkitContext.baseURL + 'data/data/camera_para.dat',
+          detectionMode: 'mono',
+        });
+
+        arContext.init(() => {
+          scene.addEventListener('loaded', () => {
+            const arController = new THREEx.ArMarkerControls(arContext, scene.object3D, {
+              type: 'pattern',
+              patternUrl: THREEx.ArToolkitContext.baseURL + 'data/data/patt.hiro', // or any other pattern
+            });
+            arContext.arController = arController; //add this line.
+            scene.object3D.add(arContext.arController.object3D); //add this line.
+          });
+          arContext.arSource = arSource;
+          arContext.initSource(arSource);
+          scene.object3D.add(arSource.object3D);
+
+          arContext.addEventListener('initialized', () => {
+            arSource.onResize(arContext);
+          });
+          arSource.domElement = video;
+          arSource.ready = true;
+          arContext.update();
+        });
+      });
     });
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-
+    
     document.body.appendChild(canvas);
 
     const cube = document.querySelector('#cube');
@@ -157,7 +194,7 @@
 
     detectRed();
 
-    cube.addEventListener('click', () => {     
+    cube.addEventListener('click', () => {
       const currentColor = cube.getAttribute('color');
       cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
     });
