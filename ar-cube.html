@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Red Background Triggered AR Cube</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ar.js@2.2.2/aframe/build/aframe-ar.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <a-scene embedded arjs>
+    <a-box 
+      id="cube" 
+      position="0 0 -3" 
+      scale="0.5 0.5 0.5" 
+      color="blue" 
+      animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
+    </a-box>
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    const video = document.createElement('video');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+
+    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      video.srcObject = stream;
+      video.play();
+    });
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    document.body.appendChild(canvas);
+
+    const cube = document.querySelector('#cube');
+
+    function detectRed() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0);
+
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      let redDetected = false;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        if (r > 150 && g < 100 && b < 100) {
+          redDetected = true;
+          break;
+        }
+      }
+
+      if (redDetected) {
+        cube.setAttribute('visible', 'true');
+      } else {
+        cube.setAttribute('visible', 'false');
+      }
+
+      requestAnimationFrame(detectRed);
+    }
+
+    detectRed();
+
+    // Add touch interaction to change color
+    cube.addEventListener('click', () => {
+      const currentColor = cube.getAttribute('color');
+      cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
+    });
+  </script>
+</body>
+</html>
