@@ -83,9 +83,9 @@
 <html>
 
 <head>
-  <title>Red Background Triggered AR Cube</title>
+  <title>Black Background Triggered AR Cube</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ar.js@2.2.2/aframe/build/aframe-ar.min.js"></script>
+ 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -107,25 +107,24 @@
 </head>
 
 <body>
-  <a-scene arjs="debugUIEnabled: false; detectionMode: mono; sourceType: webcam;" id="ar-scene">
+  <a-scene id="ar-scene">
+    <a-entity id="camera-container" camera position="0 0 0" rotation="0 0 0">
+      <a-entity id="video-plane" geometry="primitive: plane; width: 16; height: 9;" position="0 0 -5" rotation="0 0 0"
+        material="src: #video-texture; shader: flat;"></a-entity>
+    </a-entity>
     <a-box id="cube" position="0 0 -3" scale="0.5 0.5 0.5" color="red" visible="false"
       animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
     </a-box>
-    <a-entity camera></a-entity>
+    <video id="video-texture" autoplay playsinline muted style="display: none;"></video>
   </a-scene>
 
   <script>
     const scene = document.querySelector('#ar-scene');
-    const video = document.createElement('video');
-    video.setAttribute('autoplay', '');
-    video.setAttribute('muted', '');
-    video.setAttribute('playsinline', '');
+    const video = document.querySelector('#video-texture');
 
-    scene.addEventListener('arjsInitialized', () => {
-      navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-        video.srcObject = stream;
-        video.play();
-      });
+    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      video.srcObject = stream;
+      video.play();
 
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
@@ -133,30 +132,31 @@
 
       const cube = document.querySelector('#cube');
 
-      function detectRed() {
+      function detectBlack() {
         if (video.videoWidth > 0 && video.videoHeight > 0) {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
+         
           context.drawImage(video, 0, 0);
 
-          console.log("Canvas Width:", canvas.width, "Height:", canvas.height);
-
+         
           const imageData = context.getImageData(canvas.width / 2, canvas.height / 2, 1, 1);
+          
           const data = imageData.data;
           const r = data[0];
           const g = data[1];
           const b = data[2];
 
-          if (r > 150 && g < 100 && b < 100) {
+          if (r < 50 && g < 50 && b < 50) { // Check for black
             cube.setAttribute('visible', 'true');
           } else {
             cube.setAttribute('visible', 'false');
           }
         }
-        requestAnimationFrame(detectRed);
+        requestAnimationFrame(detectBlack);
       }
 
-      detectRed();
+      detectBlack();
 
       cube.addEventListener('click', () => {
         const currentColor = cube.getAttribute('color');
@@ -167,7 +167,7 @@
         cube.setAttribute('color', currentColor === 'blue' ? 'red' : 'blue');
       });
     });
-    
+
   </script>
 
 </body>
