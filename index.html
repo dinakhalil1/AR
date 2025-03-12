@@ -91,6 +91,16 @@
       margin: 0;
       overflow: hidden;
     }
+    canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px; /* Or any size you want */
+    height: 240px;
+    border: 2px solid red; /* To make it visible */
+    z-index: 1000; /* To make sure it's on top */
+    display: block;
+}
   </style>
 </head>
 
@@ -124,7 +134,7 @@
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0);
-
+      console.log(video.videoWidth, video.videoHeight);
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
 
